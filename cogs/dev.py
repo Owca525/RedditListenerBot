@@ -49,7 +49,7 @@ class devcog(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def dev(self, ctx):
+    async def devinfo(self, ctx):
         time = datetime.datetime.now() - startTime
 
         dev_message = discord.Embed(title="Developer information",color=discord.Color.purple())
