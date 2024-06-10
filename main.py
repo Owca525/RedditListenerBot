@@ -1,13 +1,14 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+from datetime import datetime
 from utils import *
-import datetime
 import asyncio
 import discord
 import ast
+import re
 import os
 
-__version__ = "1.0"
+__version__ = "Tested 1.1"
 __location_database__ = "./db/"
 __name_database__ = "reddit.db"
 
@@ -17,11 +18,11 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 client = commands.Bot(
     command_prefix="?",
     help_command=None,
-    intents=discord.Intents.default()
+    intents=discord.Intents.all()
 )
 
 @client.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx, error) -> None:
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("Uknown Command please type help")
         return
@@ -33,7 +34,7 @@ async def on_command_error(ctx, error):
     logger.error(error)
 
 @client.event
-async def on_ready():
+async def on_ready() -> None:
     for filename in os.listdir('./cogs'):
          if filename.endswith('.py'):
             try:
@@ -50,11 +51,13 @@ async def on_ready():
     logger.info(f'Connected To {client.user.name}')
     await reddit_background_task.start()
 
-async def send(channel, data):
+async def send(channel, data) -> None:
     channel = client.get_channel(channel)
         
     for item in data:
         gallery = re.findall(r'(?:https?:\/\/)?(?:www\.|old\.|i\.|new\.)?(?:reddit\.com|redd\.it)\/(?:r\/[^\s\/$.?#]+\/)?gallery\/',item[0])
+
+        logger.info(item)
 
         if gallery != []:
             sub = await post_grabber.grabber(url=item[0],subreddit=re.findall(r'(?:https?:\/\/)?(?:www\.|old\.|i\.|new\.)?(?:reddit\.com|redd\.it)\/(?:r\/([^\s\/$.?#]+)\/comments\/|gallery\/)([^\s\/$.?#]+)', item[1])[0])
@@ -73,17 +76,18 @@ async def send(channel, data):
 tmp_url = []
 tmp_post = []
 
-async def check_tmp(url):
-    return tmp_url.index(url) if url in tmp_url else ""
+async def check_tmp(url) -> list:
+    return tmp_url.index(url) if url in tmp_url else []
 
-async def set_data(data):
+async def set_data(data) -> None:
     tmp_checked = await check_tmp(data[4])
-    if tmp_checked != "":
+    if tmp_checked != []:
         await update_data(data[1], "last_check",str(tmp_post[tmp_checked]),data[4])
         await update_data(data[1], "last_check_timestamp",str(datetime.datetime.now()),data[5])
         await send(data[0],[item for item in tmp_post[tmp_checked] if item not in ast.literal_eval(data[5])])
         return
 
+    logger.info(data[4])
     sub = await subreddit_grabber.grabber(data[4])
     if sub != []:
         await update_data(data[1], "last_check",str(sub),data[5])
@@ -94,11 +98,9 @@ async def set_data(data):
         await send(data[0],[item for item in sub if item not in ast.literal_eval(data[5])])
     else:
         logger.error(f"Extracting error: {data[4]}")
-    
-    return
 
 @tasks.loop(seconds=300)
-async def reddit_background_task():
+async def reddit_background_task() -> None:
     logger.info("Running Task: Reddit")
     tmp_url.clear()
     tmp_post.clear()
@@ -118,14 +120,10 @@ if __name__ == "__main__":
     
     if os.path.exists(__location_database__ + __name_database__) != True:
         logger.info("Creating database")
-        conn = create_connection()
-        conn.close()
+        conn = create_connection().close()
 
     if TOKEN == None:
         logger.error("Token no find")
         exit()
 
-    try:
-        client.run(TOKEN)
-    except Exception as e:
-        logger.error(e)
+    client.run(TOKEN)

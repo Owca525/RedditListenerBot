@@ -15,7 +15,7 @@ class devcog(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def sendlog(self,ctx):
+    async def sendlog(self,ctx) -> None:
         try:
             file = discord.File(f"{log_file}", filename=str(log_file))
             await ctx.send(f"Log: {log_file}:", file=file)
@@ -24,12 +24,12 @@ class devcog(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def ping(self,ctx):
+    async def ping(self,ctx) -> None:
         ctx.send(f"Bot Latency: {round(self.client.latency * 1000)}")
 
     @commands.command()
     @commands.is_owner()
-    async def reload(self, ctx):
+    async def reload(self, ctx) -> None:
         async with ctx.typing():
             embed = discord.Embed(title='# Reload All cogs #', timestamp=ctx.message.created_at, color=discord.Color.green())
 
@@ -49,7 +49,7 @@ class devcog(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def devinfo(self, ctx):
+    async def devinfo(self, ctx) -> None:
         time = datetime.datetime.now() - startTime
 
         dev_message = discord.Embed(title="Developer information",color=discord.Color.purple())
@@ -61,6 +61,6 @@ class devcog(commands.Cog):
 
         await ctx.send(embed=dev_message)
 
-async def setup(client):
+async def setup(client) -> None:
     await client.add_cog(devcog(client))
     logger.info("Dev is online")

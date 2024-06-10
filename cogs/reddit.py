@@ -1,6 +1,6 @@
+from utils import logger, post_grabber, subreddit_grabber, get, create_connection, get_data, create_tables, add_data, delete_data
 from discord.ext import commands
 from discord.ui import View
-from utils import *
 import datetime
 import discord
 import re
@@ -13,12 +13,12 @@ class PaginationView(View):
         self.url = url
         self.title = title
 
-    async def create_embed(self, post):
+    async def create_embed(self, post) -> discord.embeds.Embed:
         embed_message = discord.Embed(title=f"From Reddit: {self.url.replace('old.reddit.com','www.reddit.com')}", color=discord.Color.orange(), description=str(self.title))
         embed_message.set_image(url=post[self.current_page]).set_footer(text=f"post {self.current_page+1}/{len(self.post)}")
         return embed_message
 
-    async def send_with_pagination(self, ctx):
+    async def send_with_pagination(self, ctx) -> None:
         embed = await self.create_embed(self.post)
 
         if isinstance(embed, str) != True:
@@ -35,7 +35,7 @@ class PaginationView(View):
             await self.message.edit(content=str(embed))
 
     @discord.ui.button(label="<-", style=discord.ButtonStyle.green)
-    async def prevButton(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def prevButton(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         self.current_page -= 1
         if str(self.current_page).find("-") != -1:
@@ -44,7 +44,7 @@ class PaginationView(View):
         await self.send_multiply(self.post)
 
     @discord.ui.button(label="->", style=discord.ButtonStyle.green)
-    async def nextButton(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def nextButton(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         self.current_page += 1
         if self.current_page > len(self.post):
@@ -57,7 +57,7 @@ class reddit(commands.Cog):
         self.client = client
 
     @commands.command(name="redditpost")
-    async def redditpost(self, ctx, url: str):
+    async def redditpost(self, ctx, url: str) -> None:
         if re.findall(r'^(https?:\/\/)?(www\.|old\.|i\.|new\.)?(reddit\.com|redd\.it)\/[^\s\/$.?#].[^\s]*$',str(url)) == []:
             await ctx.send("Wrong post")
             return
@@ -82,17 +82,16 @@ class reddit(commands.Cog):
 class redditlistenercommands(commands.Cog):
     def __init__(self, client):
         self.client = client
-    
+
     @commands.command(name="addsub")
     @commands.has_permissions(administrator=True)
-    async def addsub(self, ctx, channel, url):
-        if re.findall(r'https?://(?:www|i|new)\.reddit\.com/r/Nekomimi/(?:top|new|controversial|rising)/?$',str(url)) == []:
+    async def addsub(self, ctx, channel, url) -> None:
+        if re.findall(r'https?://(?:www|i|new)\.reddit\.com/r/[A-Za-z]+/(?:top|new|controversial|rising)/?$',str(url)) == []:
             await ctx.send("Wrong subreddit")
             return
         
-        conn = https()
-        await conn.get(url)
-        if conn.status in [404,301,300]:
+        conn = await get(url=url)
+        if conn.status_code in [404,301,300]:
             await ctx.send("Something wrong with this subreddit")
             return 
 
@@ -100,9 +99,8 @@ class redditlistenercommands(commands.Cog):
             if self.client.get_channel(int(re.findall(r'<#(\d+)>', channel)[0])):
                 conn = await create_connection()
                 await create_tables(conn, f"{ctx.guild.id}")
-                sub = subreddit_grabber()
-                sub.grabber(url)
-                await add_data(conn, ctx.guild.id, (re.findall(r'<#(\d+)>', channel)[0], ctx.guild.id, ctx.author.id, datetime.datetime.now(), url, str(sub.posts), datetime.datetime.now()))
+                sub = await subreddit_grabber.grabber(url)
+                await add_data(conn, ctx.guild.id, (re.findall(r'<#(\d+)>', channel)[0], ctx.guild.id, ctx.author.id, datetime.datetime.now(), url.replace("old.reddit.com","www.reddit.com").replace("i.reddit.com","www.reddit.com").replace("new.reddit.com","www.reddit.com"), str(sub), datetime.datetime.now()))
                 conn.close()
 
                 await ctx.send(f":white_check_mark: Successfully added subreddit: {url} for channel: {channel}")
@@ -111,7 +109,7 @@ class redditlistenercommands(commands.Cog):
 
     @commands.command(name="delsub")
     @commands.has_permissions(administrator=True)
-    async def delsub(self, ctx, channel):
+    async def delsub(self, ctx, channel) -> None:
         try:
             if self.client.get_channel(int(re.findall(r'<#(\d+)>', channel)[0])):
                 conn = await create_connection()
@@ -123,7 +121,7 @@ class redditlistenercommands(commands.Cog):
 
     @commands.command(name="checksub")
     @commands.has_permissions(administrator=True)
-    async def checksub(self, ctx):
+    async def checksub(self, ctx) -> None:
         conn = await create_connection()
         data = await get_data(conn, ctx.guild.id)
         conn.close()
@@ -138,7 +136,7 @@ class redditlistenercommands(commands.Cog):
 
         await ctx.send(embed=embed_message)
 
-async def setup(client):
+async def setup(client) -> None:
     await client.add_cog(redditlistenercommands(client))
     await client.add_cog(reddit(client))
     logger.info("Reddit is online")

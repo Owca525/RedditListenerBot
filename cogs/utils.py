@@ -1,6 +1,6 @@
 from discord.ext import commands
 from main import __version__
-from utils import *
+from utils import logger
 import discord
 
 class utils(commands.Cog):
@@ -8,7 +8,7 @@ class utils(commands.Cog):
         self.client = client
 
     @commands.command(name="help")
-    async def help(self, ctx):
+    async def help(self, ctx) -> None:
         prefix = self.client.command_prefix
         embed = discord.Embed(title=f"**- Help Page -**", color=discord.Color.green())
         embed.add_field(name=f"{prefix}redditpost",value="Taking post from reddit",inline=False)
@@ -21,11 +21,11 @@ class utils(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command(name="credits")
-    async def credits(self, ctx):
+    async def credits(self, ctx) -> None:
         embed = discord.Embed(title=f"**- Credits -**", color=discord.Color.green())
         embed.add_field(name=f"Owca525: Creator",value="Github: https://github.com/Owca525",inline=False)
         await ctx.send(embed=embed)
 
-async def setup(client):
+async def setup(client) -> None:
     await client.add_cog(utils(client))
     logger.info("Utils is online")
