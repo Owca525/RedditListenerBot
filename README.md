@@ -21,5 +21,6 @@ Default prefix is ?
 - [python-dotenv](https://pypi.org/project/python-dotenv/) 1.0.1
 - [discord.py](https://pypi.org/project/discord.py/) 2.3.2
 - [asyncio](https://pypi.org/project/asyncio/) 3.4.3
+- [httpx](https://www.python-httpx.org/) 0.27.0
 # Credits
 Owca525: Creator
